@@ -10,7 +10,7 @@ export async function startAudioModulator(processor: Processor): Promise<AudioWo
     // If already running, return the active instance to avoid duplicate setups
     if (audioContext && audioContext.state !== 'closed') {
         if (audioContext.state === 'suspended') await audioContext.resume();
-        return audioNode; // return the existing audio worklet node
+        if (audioNode) return audioNode; // return the existing audio worklet node
     }
 
     // Initialize new AudioContext forced at 48KHz sampling rate

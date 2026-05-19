@@ -4,9 +4,9 @@ import { InputText } from 'primereact/inputtext';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { startAudioModulator, stopAudioModulator, type BaudRate } from '../services/modulator';
 
-const baudRateOptions = [];
+const baudRateOptions: { label: string, value: BaudRate }[] = [];
 for (let i: BaudRate = 300; i <= 9600; i *= 2) baudRateOptions.push(
-    { 'label': `${i} Bits/Second`, value: i }
+    { label: `${i} Bits/Second`, value: i as BaudRate }
 );
 
 function UARTDemo() {
@@ -21,7 +21,7 @@ function UARTDemo() {
         setAudioNode(null);
         setDataToSend('');
         if (portRef.current) {
-            portRef.current.onmessage = undefined;
+            portRef.current.onmessage = null;
             portRef.current = null;
         }
     }, []);
@@ -38,7 +38,7 @@ function UARTDemo() {
         const data = new Uint8Array(dataToSend.split('').map(c => c.charCodeAt(0)));
         portRef.current.onmessage = repeat ? () => {
             if (portRef.current) portRef.current.postMessage(data);
-        } : undefined;
+        } : null;
         portRef.current.postMessage(data);
     }
 

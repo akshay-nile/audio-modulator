@@ -16,7 +16,7 @@ function BMTMDemo() {
         setAudioNode(null);
         setDataToSend('');
         if (portRef.current) {
-            portRef.current.onmessage = undefined;
+            portRef.current.onmessage = null;
             portRef.current = null;
         }
     }, []);
@@ -33,7 +33,7 @@ function BMTMDemo() {
         const data = new Uint8Array(dataToSend.split('').map(c => c.charCodeAt(0)));
         portRef.current.onmessage = repeat ? () => {
             if (portRef.current) portRef.current.postMessage(data);
-        } : undefined;
+        } : null;
         portRef.current.postMessage(data);
     }
 
