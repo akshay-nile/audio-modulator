@@ -1,6 +1,6 @@
 // UART - Audio Modulator (Controller)
 
-import UARTAudioProcessorURL from './uart-processor.ts?worker&url';
+import UARTProcessorURL from './UARTProcessor.ts?worker&url';
 
 let audioContext: AudioContext | null = null;
 let audioNode: AudioWorkletNode | null = null;
@@ -23,7 +23,7 @@ export async function startUARTModulator(): Promise<(data: Uint8Array | BaudRate
     audioContext = new AudioContext({ sampleRate: 48_000 });
 
     // Inject compilation-safe background uart-processor.js module
-    await audioContext.audioWorklet.addModule(UARTAudioProcessorURL);
+    await audioContext.audioWorklet.addModule(`${UARTProcessorURL}&v=${Date.now()}`);
 
     // Instantiate a new node of UART Audio Processor class
     audioNode = new AudioWorkletNode(audioContext, 'uart-processor', {

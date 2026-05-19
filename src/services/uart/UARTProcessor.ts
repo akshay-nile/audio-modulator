@@ -26,7 +26,9 @@ class UARTAudioProcessor extends AudioWorkletProcessor {
         this.port.onmessage = (e: MessageEvent<Uint8Array | number>) => {
             if (typeof e.data === 'number') {
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data);
-            } else this.buffer.push(...e.data);
+            } else if (e.data instanceof Uint8Array) {
+                this.buffer.push(...e.data);
+            }
         };
     }
 

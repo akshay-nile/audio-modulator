@@ -1,22 +1,20 @@
 import { TabMenu } from 'primereact/tabmenu';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
 import BMTMDemo from './components/BMTMDemo';
 import UARTDemo from './components/UARTDemo';
 
 function App() {
-  const navigate = useNavigate();
   const options = [
     { label: 'UART Audio Transmitter', value: '/uart', element: <UARTDemo /> },
     { label: 'Binary Multi-Tone Modulator', value: '/bmtm', element: <BMTMDemo /> },
   ];
 
+  const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
-  useEffect(() => { navigate('/uart'); }, [navigate]);
-
   return (
-    <div className="w-full h-dvh flex flex-col items-center my-4">
+    <div className="w-full h-dvh flex flex-col items-center my-2">
       <TabMenu pt={{ label: { className: 'text-center' } }}
         model={options} activeIndex={activeIndex}
         onTabChange={(e) => {
