@@ -1,8 +1,12 @@
 import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
-import { Slider, type SliderChangeEvent } from 'primereact/slider';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { startAudioModulator, stopAudioModulator } from '../services/modulator';
+import { bmtmDataRates, startAudioModulator, stopAudioModulator } from '../services/modulator';
+
+const dataRateOptions: { label: string, value: number }[] = bmtmDataRates.map(n => ({
+    label: `${n} Byte${n === 1 ? '' : 's'}/Second`, value: n
+}));
 
 function BMTMDemo() {
     const portRef = useRef<MessagePort | null>(null);
@@ -53,15 +57,16 @@ function BMTMDemo() {
                     severity={audioNode ? 'danger' : 'success'}
                     onClick={() => audioNode ? stopModulator() : startModulator()} />
 
-                <div className="flex flex-col gap-2 items-center my-2">
-                    <label htmlFor="data-rate">Data Rate: {dataRate} Bytes/Second</label>
-                    <Slider id="data-rate" name="data-rate" className="w-full mt-2"
-                        value={dataRate} min={1} max={100} step={10} disabled={audioNode === null}
-                        onChange={(e: SliderChangeEvent) => {
-                            if (typeof e.value !== 'number') return;
-                            const value = e.value - (e.value > 1 ? e.value % 10 : 0);
-                            setDataRate(value);
-                            if (audioNode) audioNode.port.postMessage(value);
+                <div className="flex gap-2 justify-center items-center">
+                    <label htmlFor="data-rate" className={audioNode ? '' : 'text-zinc-500'}>
+                        Data Rate:
+                    </label>
+                    <Dropdown id="data-rate" name="data-rate"
+                        options={dataRateOptions} optionLabel="label" optionValue="value"
+                        value={dataRate} disabled={audioNode === null}
+                        onChange={e => {
+                            setDataRate(e.value);
+                            if (audioNode) audioNode.port.postMessage(e.value);
                         }} />
                 </div>
             </div>
@@ -70,7 +75,8 @@ function BMTMDemo() {
                 <InputText
                     placeholder="Enter Data To Transmit..."
                     value={dataToSend} disabled={audioNode === null}
-                    onChange={e => setDataToSend(e.target.value)} />
+                    onChange={e => setDataToSend(e.target.value)}
+                    onKeyUp={e => e.key === 'Enter' ? sendData(false) : e.key === 'Escape' ? setDataToSend('') : null} />
 
                 <div className="flex justify-center gap-4">
                     <Button label="Send Once" size="small" disabled={audioNode === null}

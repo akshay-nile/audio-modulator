@@ -3,8 +3,10 @@
 let audioContext: AudioContext | null = null;
 let audioNode: AudioWorkletNode | null = null;
 
-export type Processor = { module: string, channels: 1 | 2 }
-export type BaudRate = 300 | 600 | 1200 | 2400 | 4800 | 9600;
+export const uartBaudRates = [300, 600, 1200, 2400, 4800, 9600];
+export const bmtmDataRates = [1, 5, 10, 25, 50, 100];
+
+type Processor = { module: string, channels: 1 | 2 }
 
 export async function startAudioModulator(processor: Processor): Promise<AudioWorkletNode> {
     // If already running, return the active instance to avoid duplicate setups

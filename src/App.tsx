@@ -19,7 +19,7 @@ function App() {
   }, [activeIndex, navigate]);
 
   return (
-    <div className="w-full h-dvh flex flex-col items-center my-2">
+    <div className="w-full h-dvh flex flex-col items-center">
       <TabMenu pt={{ label: { className: 'text-center' } }}
         model={options} activeIndex={activeIndex}
         onTabChange={(e) => {

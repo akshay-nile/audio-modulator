@@ -2,18 +2,17 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { startAudioModulator, stopAudioModulator, type BaudRate } from '../services/modulator';
+import { startAudioModulator, stopAudioModulator, uartBaudRates } from '../services/modulator';
 
-const baudRateOptions: { label: string, value: BaudRate }[] = [];
-for (let i: BaudRate = 300; i <= 9600; i *= 2) baudRateOptions.push(
-    { label: `${i} Bits/Second`, value: i as BaudRate }
-);
+const baudRateOptions: { label: string, value: number }[] = uartBaudRates.map(n => ({
+    label: `${n} Bits/Second`, value: n
+}));
 
 function UARTDemo() {
     const portRef = useRef<MessagePort | null>(null);
 
     const [audioNode, setAudioNode] = useState<AudioWorkletNode | null>(null);
-    const [baudRate, setBaudRate] = useState<BaudRate>(1200);
+    const [baudRate, setBaudRate] = useState<number>(1200);
     const [dataToSend, setDataToSend] = useState<string>('');
 
     const stopModulator = useCallback(async () => {
@@ -59,7 +58,9 @@ function UARTDemo() {
                     onClick={() => audioNode ? stopModulator() : startModulator()} />
 
                 <div className="flex gap-2 justify-center items-center">
-                    <label htmlFor="baud-rate" className="font-light">Baud Rate:</label>
+                    <label htmlFor="baud-rate" className={audioNode ? '' : 'text-zinc-500'}>
+                        Baud Rate:
+                    </label>
                     <Dropdown id="baud-rate" name="baud-rate"
                         options={baudRateOptions} optionLabel="label" optionValue="value"
                         value={baudRate} disabled={audioNode === null}
@@ -74,7 +75,8 @@ function UARTDemo() {
                 <InputText
                     placeholder="Enter Data To Send..."
                     value={dataToSend} disabled={audioNode === null}
-                    onChange={e => setDataToSend(e.target.value)} />
+                    onChange={e => setDataToSend(e.target.value)}
+                    onKeyUp={e => e.key === 'Enter' ? sendData(false) : e.key === 'Escape' ? setDataToSend('') : null} />
 
                 <div className="flex justify-center gap-4">
                     <Button label="Send Once" size="small" disabled={audioNode === null}

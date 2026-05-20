@@ -15,19 +15,20 @@ class BMTMAudioProcessor extends AudioWorkletProcessor {
             if (typeof e.data === 'number') {
                 this.samplesPerByte = Math.floor(SAMPLING_RATE / e.data);
             } else if (e.data instanceof Uint8Array) {
-                this.buffer.push(...e.data);
+                if (e.data.length === 0) return;
+                this.buffer.push(0xFF, 0x00, e.data.length, ...e.data, 0x00, 0x00);
                 this.alertOnEmpty = true;
             }
         };
     }
 
-    getSample() {
+    getMixedToneSample() {
         let sample = 0;
 
         for (let i = 0; i < 8; i++) {
             if (this.byte & (1 << i)) {
-                const freq = (i + 1) * 1000;
-                const time = (this.counter / SAMPLING_RATE);
+                const freq = 1800 + i * 400;    // 1800, 2200, ... , 4600 Hz
+                const time = this.counter / SAMPLING_RATE;
                 sample += 0.125 * Math.sin(2 * Math.PI * freq * time);
             }
         }
@@ -39,7 +40,7 @@ class BMTMAudioProcessor extends AudioWorkletProcessor {
         const channel = _outputs[0][0];
 
         for (let i = 0; i < channel.length; i++) {
-            channel[i] = this.getSample();
+            channel[i] = this.getMixedToneSample();
 
             if (++this.counter >= this.samplesPerByte) {
                 this.counter = 0;
