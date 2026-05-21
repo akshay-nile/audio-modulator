@@ -99,10 +99,10 @@ class BMTDAudioProcessor extends AudioWorkletProcessor {
 
     constructor() {
         super();
-        this.state = null;
+        this.state = 'INIT';
 
-        this.dataBuffer = [];
         this.packetSize = 0;
+        this.dataBuffer = [];
 
         this.sampleCounter = 0;
         this.samplesPerByte = Math.floor(SAMPLING_RATE / DATA_RATE);
@@ -110,6 +110,8 @@ class BMTDAudioProcessor extends AudioWorkletProcessor {
         this.engine = new SDFTEngine(this.samplesPerByte);
         this.port.onmessage = e => {
             if (typeof e.data === 'number') {
+                this.state = 'INIT';
+                this.sampleCounter = 0;
                 this.samplesPerByte = Math.floor(SAMPLING_RATE / e.data);
                 this.engine = new SDFTEngine(this.samplesPerByte);
             }
