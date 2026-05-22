@@ -1,14 +1,13 @@
 import { TabMenu } from 'primereact/tabmenu';
 import { useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
-import BMTDemodulator from './components/BMTDemodulator';
-import BMTModulator from './components/BMTModulator';
-import UARTDemo from './components/UARTDemo';
+import MultiToneDemodulator from './components/MultiToneDemodulator';
+import MultiToneModulator from './components/MultiToneModulator';
 
 const options = [
-  { label: 'UART Audio Transmitter', value: '/uart', element: <UARTDemo /> },
-  { label: 'BMT Modulator', value: '/bmtm/tx', element: <BMTModulator /> },
-  { label: 'BMT Demodulator', value: '/bmtm/rx', element: <BMTDemodulator /> },
+  // { label: 'UART Audio Transmitter', value: '/uart', element: <UARTDemo /> },
+  { label: 'Multi-Tone Modulator', value: '/mtm-tx', element: <MultiToneModulator /> },
+  { label: 'Multi-Tone Demodulator', value: '/mtm-rx', element: <MultiToneDemodulator /> },
 ];
 
 function App() {
@@ -29,7 +28,7 @@ function App() {
           navigate(options[e.index].value);
         }} />
 
-      <div className="my-auto">
+      <div className="w-full my-auto">
         <Routes>
           <Route path="/" element={options[activeIndex].element} />
           {options.map(({ value, element }) => <Route path={value} element={element} />)}

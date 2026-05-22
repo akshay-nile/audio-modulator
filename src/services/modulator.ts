@@ -8,7 +8,8 @@ let audioNode: AudioWorkletNode | null = null;
 export const uartBaudRates = [300, 600, 1200, 2400, 4800, 9600];
 export const bmtmDataRates = [1, 5, 10, 25, 50, 100];
 
-type Processor = { module: string, channels: 1 | 2, rate: number }
+export type SliderValues = { A?: number, B?: number, C?: number, D?: number };
+type Processor = { module: string, channels: 1 | 2, rate: number | SliderValues }
 
 export async function startAudioModulator(processor: Processor): Promise<AudioWorkletNode> {
     // If already running, return the active instance to avoid duplicate setups
