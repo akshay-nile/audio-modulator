@@ -1,12 +1,14 @@
 import { TabMenu } from 'primereact/tabmenu';
 import { useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
-import BMTMDemo from './components/BMTMDemo';
+import BMTDemodulator from './components/BMTDemodulator';
+import BMTModulator from './components/BMTModulator';
 import UARTDemo from './components/UARTDemo';
 
 const options = [
   { label: 'UART Audio Transmitter', value: '/uart', element: <UARTDemo /> },
-  { label: 'Binary Multi-Tone Modulator', value: '/bmtm', element: <BMTMDemo /> },
+  { label: 'BMT Modulator', value: '/bmtm/tx', element: <BMTModulator /> },
+  { label: 'BMT Demodulator', value: '/bmtm/rx', element: <BMTDemodulator /> },
 ];
 
 function App() {

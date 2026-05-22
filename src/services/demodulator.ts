@@ -4,7 +4,9 @@ const SAMPLING_RATE = 48_000;
 
 let audioContext: AudioContext | null = null;
 let audioNode: AudioWorkletNode | null = null;
+
 let micStream: MediaStream | null = null;
+let sourceNode: MediaStreamAudioSourceNode | null = null;
 
 export const bmtmDataRates = [1, 5, 10, 25, 50, 100];
 
@@ -35,9 +37,6 @@ export async function startAudioDemodulator(processor: Processor): Promise<Audio
     // Register the background processor.js worker file 
     await audioContext.audioWorklet.addModule(`./${processor.module}.js`);
 
-    // Create the source node from the microphone stream
-    const sourceNode = audioContext.createMediaStreamSource(micStream);
-
     // Instantiate the custom AudioWorkletNode
     audioNode = new AudioWorkletNode(audioContext, processor.module, {
         numberOfInputs: 1,
@@ -48,6 +47,9 @@ export async function startAudioDemodulator(processor: Processor): Promise<Audio
 
         processorOptions: { rate: processor.rate } // Constructor options
     });
+
+    // Create the source node from the microphone stream
+    sourceNode = audioContext.createMediaStreamSource(micStream);
 
     // Connect the microphone source node to the audio worklet node
     sourceNode.connect(audioNode);
@@ -60,7 +62,13 @@ export async function startAudioDemodulator(processor: Processor): Promise<Audio
 }
 
 export async function stopAudioDemodulator(): Promise<void> {
-    // Disconnect nodes to immediately stop audio graph execution
+    // Disconnect soruce node 
+    if (sourceNode) {
+        sourceNode.disconnect();
+        sourceNode = null;
+    }
+
+    // Disconnect audio node to immediately stop audio graph execution
     if (audioNode) {
         audioNode.disconnect();
         audioNode = null;

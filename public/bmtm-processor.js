@@ -18,7 +18,8 @@ class BMTMAudioProcessor extends AudioWorkletProcessor {
                 this.samplesPerByte = Math.floor(SAMPLING_RATE / e.data);
             } else if (e.data instanceof Uint8Array) {
                 if (e.data.length === 0) return;
-                this.buffer.push(0xFF, 0x00, e.data.length, ...e.data, 0x00, 0x00);
+                const checksum = e.data.reduce((a, b) => a + b, 0) & 0xFF;
+                this.buffer.push(0xFF, 0x00, e.data.length, ...e.data, checksum, 0x00);
                 this.alertOnEmpty = true;
             }
         };

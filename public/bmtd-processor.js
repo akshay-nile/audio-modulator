@@ -59,8 +59,7 @@ class SDFTEngine {
             this.freqBins.push(new SDFTFreqBin(freq, windowSize));
         }
 
-        this.noiseFloor = 0.1;
-        this.totalEnergy = 0.0;
+        this.totalEnergy = 0;
         this.energyDifference = 0.0;
     }
 
@@ -80,17 +79,17 @@ class SDFTEngine {
         return byte;
     }
 
-    crank(latestSample, state) {
+    crank(latestSample) {
         const oldestSample = this.window.exchange(latestSample);
         const sampleDifference = latestSample - oldestSample;
-        let currentEnergyTotal = 0.0;
-        for (let i = 0; i < 8; i++) currentEnergyTotal += this.freqBins[i].update(sampleDifference);
+
+        let currentEnergyTotal = 0;
+        for (let i = 0; i < 8; i++) {
+            currentEnergyTotal += Math.floor(this.freqBins[i].update(sampleDifference));
+        }
+
         this.energyDifference = currentEnergyTotal - this.totalEnergy;
         this.totalEnergy = currentEnergyTotal;
-        if (state === 'IDLE') {
-            this.noiseFloor = (this.noiseFloor + this.totalEnergy) / 2.0;
-            if (this.noiseFloor < 0.1) this.noiseFloor = 0.1;
-        }
     }
 }
 
@@ -135,19 +134,15 @@ class BMTDAudioProcessor extends AudioWorkletProcessor {
 
                 case 'IDLE':
                     if (this.sampleCounter >= this.samplesPerByte) this.sampleCounter = 0;
-                    else if (this.engine.totalEnergy > (2 * this.engine.noiseFloor)) {
-                        this.state = 'HUNT';
-                        this.sampleCounter = 0;
-                    }
+                    else if (this.engine.totalEnergy > 0) this.state = 'HUNT';
                     break;
 
                 case 'HUNT':
-                    if (this.engine.energyDifference <= 0) {
-                        const lowerBound = this.samplesPerByte * 0.33;
-                        const upperBound = this.samplesPerByte * 0.66;
-                        if (this.sampleCounter > lowerBound && this.sampleCounter < upperBound) {
+                    if (this.engine.energyDifference < 0) {
+                        if (this.sampleCounter < this.samplesPerByte) {
                             this.state = 'LOCK';
                             this.engine.record();
+                            console.log(this.engine.energyDifference);
                         } else this.state = 'IDLE';
                         this.sampleCounter = 0;
                     }
@@ -173,10 +168,19 @@ class BMTDAudioProcessor extends AudioWorkletProcessor {
                 case 'SCAN':
                     if (this.sampleCounter === this.samplesPerByte) {
                         this.dataBuffer.push(this.engine.decode());
-                        if (this.dataBuffer.length === this.packetSize) {
-                            this.port.postMessage(this.dataBuffer);
-                            this.state = 'IDLE';
+                        if (this.dataBuffer.length === this.packetSize) this.state = 'TEST';
+                        this.sampleCounter = 0;
+                    }
+                    break;
+
+                case 'TEST':
+                    if (this.sampleCounter === this.samplesPerByte) {
+                        const txChecksum = this.engine.decode();
+                        const rxChecksum = this.dataBuffer.reduce((a, b) => a + b, 0) & 0xFF;
+                        if (txChecksum === rxChecksum) {
+                            this.port.postMessage(new Uint8Array(this.dataBuffer));
                         }
+                        this.state = 'IDLE';
                         this.sampleCounter = 0;
                     }
                     break;

@@ -8,12 +8,12 @@ const dataRateOptions: { label: string, value: number }[] = bmtmDataRates.map(n 
     label: `${n} Byte${n === 1 ? '' : 's'}/Second`, value: n
 }));
 
-function BMTMDemo() {
+function BMTModulator() {
     const portRef = useRef<MessagePort | null>(null);
 
     const [audioNode, setAudioNode] = useState<AudioWorkletNode | null>(null);
     const [dataToSend, setDataToSend] = useState<string>('');
-    const [dataRate, setDataRate] = useState<number>(10);
+    const [dataRate, setDataRate] = useState<number>(25);
 
     const stopModulator = useCallback(async () => {
         await stopAudioModulator();
@@ -27,7 +27,6 @@ function BMTMDemo() {
 
     async function startModulator() {
         const node = await startAudioModulator({ module: 'bmtm-processor', channels: 1, rate: dataRate });
-        node.port.postMessage(dataRate);
         portRef.current = node.port;
         setAudioNode(node);
     }
@@ -48,7 +47,7 @@ function BMTMDemo() {
     return (
         <div className="flex flex-col items-center gap-16">
             <h2 className="text-xl font-semibold text-center mb-2">
-                Mono Channel<br />Binary Multi-Tone Modulator
+                Mono Channel Tx<br />Binary Multi-Tone Modulator
             </h2>
 
             <div className="flex flex-col gap-4">
@@ -87,4 +86,4 @@ function BMTMDemo() {
     );
 }
 
-export default BMTMDemo;
+export default BMTModulator;

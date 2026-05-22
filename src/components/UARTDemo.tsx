@@ -27,7 +27,6 @@ function UARTDemo() {
 
     async function startModulator() {
         const node = await startAudioModulator({ module: 'uart-processor', channels: 2, rate: baudRate });
-        node.port.postMessage(baudRate);
         portRef.current = node.port;
         setAudioNode(node);
     }
