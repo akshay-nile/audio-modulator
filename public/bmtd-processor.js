@@ -142,7 +142,6 @@ class BMTDAudioProcessor extends AudioWorkletProcessor {
                         if (this.sampleCounter < this.samplesPerByte) {
                             this.state = 'LOCK';
                             this.engine.record();
-                            console.log(this.engine.energyDifference);
                         } else this.state = 'IDLE';
                         this.sampleCounter = 0;
                     }
