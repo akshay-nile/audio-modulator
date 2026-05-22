@@ -1,17 +1,20 @@
 // UART - Audio Node Processor
 
-const BAUD_RATE = 1200;
 const SAMPLING_RATE = 48_000;
 
 class UARTAudioProcessor extends AudioWorkletProcessor {
-    constructor() {
-        super();
+    constructor(options) {
+        super(options);
+
         this.bit = null;     // UART idle state (LOW)
         this.frame = null;   // UART data frame of 8 bits
+
         this.buffer = [];    // Data bytes to transmit
-        this.counter = 0;    // Output sample counter
         this.alertOnEmpty = true;
-        this.samplesPerBit = Math.floor(SAMPLING_RATE / BAUD_RATE);
+
+        this.sampleCounter = 0;
+        this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.rate);
+
         this.port.onmessage = e => {
             if (typeof e.data === 'number') {
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data);
@@ -45,10 +48,12 @@ class UARTAudioProcessor extends AudioWorkletProcessor {
         for (let i = 0; i < leftChannel.length; i++) {
             leftChannel[i] = this.bit === null ? 0 : this.bit ? +1 : -1;
             rightChannel[i] = -leftChannel[i]; // Differencial stereo output
+            this.sampleCounter++;
 
-            if (++this.counter >= this.samplesPerBit) {
-                this.counter = 0;
+            if (this.sampleCounter >= this.samplesPerBit) {
+                this.sampleCounter = 0;
                 this.bit = this.getNextBit();
+
                 if (this.alertOnEmpty && this.buffer.length === 0) {
                     this.port.postMessage(null);
                     this.alertOnEmpty = false;

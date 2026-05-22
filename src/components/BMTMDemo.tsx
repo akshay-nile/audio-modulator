@@ -13,7 +13,7 @@ function BMTMDemo() {
 
     const [audioNode, setAudioNode] = useState<AudioWorkletNode | null>(null);
     const [dataToSend, setDataToSend] = useState<string>('');
-    const [dataRate, setDataRate] = useState<number>(50);
+    const [dataRate, setDataRate] = useState<number>(10);
 
     const stopModulator = useCallback(async () => {
         await stopAudioModulator();
@@ -26,7 +26,7 @@ function BMTMDemo() {
     }, []);
 
     async function startModulator() {
-        const node = await startAudioModulator({ module: 'bmtm-processor', channels: 1 });
+        const node = await startAudioModulator({ module: 'bmtm-processor', channels: 1, rate: dataRate });
         node.port.postMessage(dataRate);
         portRef.current = node.port;
         setAudioNode(node);
@@ -58,12 +58,10 @@ function BMTMDemo() {
                     onClick={() => audioNode ? stopModulator() : startModulator()} />
 
                 <div className="flex gap-2 justify-center items-center">
-                    <label htmlFor="data-rate" className={audioNode ? '' : 'text-zinc-500'}>
-                        Data Rate:
-                    </label>
+                    <label htmlFor="data-rate">Data Rate:</label>
                     <Dropdown id="data-rate" name="data-rate"
                         options={dataRateOptions} optionLabel="label" optionValue="value"
-                        value={dataRate} disabled={audioNode === null}
+                        value={dataRate}
                         onChange={e => {
                             setDataRate(e.value);
                             if (audioNode) audioNode.port.postMessage(e.value);

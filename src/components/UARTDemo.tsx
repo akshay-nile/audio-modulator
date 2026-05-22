@@ -26,7 +26,7 @@ function UARTDemo() {
     }, []);
 
     async function startModulator() {
-        const node = await startAudioModulator({ module: 'uart-processor', channels: 2 });
+        const node = await startAudioModulator({ module: 'uart-processor', channels: 2, rate: baudRate });
         node.port.postMessage(baudRate);
         portRef.current = node.port;
         setAudioNode(node);
@@ -58,12 +58,10 @@ function UARTDemo() {
                     onClick={() => audioNode ? stopModulator() : startModulator()} />
 
                 <div className="flex gap-2 justify-center items-center">
-                    <label htmlFor="baud-rate" className={audioNode ? '' : 'text-zinc-500'}>
-                        Baud Rate:
-                    </label>
+                    <label htmlFor="baud-rate">Baud Rate:</label>
                     <Dropdown id="baud-rate" name="baud-rate"
                         options={baudRateOptions} optionLabel="label" optionValue="value"
-                        value={baudRate} disabled={audioNode === null}
+                        value={baudRate}
                         onChange={e => {
                             setBaudRate(e.value);
                             if (audioNode) audioNode.port.postMessage(e.value);

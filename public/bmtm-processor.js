@@ -1,16 +1,18 @@
 // Binary Multi-Tone Modulator - Audio Node Processor
 
-const DATA_RATE = 50;  // Bytes per Second
 const SAMPLING_RATE = 48_000;
 
 class BMTMAudioProcessor extends AudioWorkletProcessor {
-    constructor() {
-        super();
+    constructor(options) {
+        super(options);
+
         this.byte = 0;       // Idle data byte to transmit
         this.buffer = [];    // Data bytes to transmit
-        this.counter = 0;    // Output sample counter
         this.alertOnEmpty = true;
-        this.samplesPerByte = Math.floor(SAMPLING_RATE / DATA_RATE);
+
+        this.sampleCounter = 0;
+        this.samplesPerByte = Math.floor(SAMPLING_RATE / options.processorOptions.rate);
+
         this.port.onmessage = e => {
             if (typeof e.data === 'number') {
                 this.samplesPerByte = Math.floor(SAMPLING_RATE / e.data);
@@ -27,8 +29,8 @@ class BMTMAudioProcessor extends AudioWorkletProcessor {
 
         for (let i = 0; i < 8; i++) {
             if (this.byte & (1 << i)) {
-                const freq = 1800 + i * 400;    // 1800, 2200, ... , 4600 Hz
-                const time = this.counter / SAMPLING_RATE;
+                const freq = 1800 + i * 400;    // 1800Hz, 2200Hz, ... , 4600Hz
+                const time = this.sampleCounter / SAMPLING_RATE;
                 sample += 0.125 * Math.sin(2 * Math.PI * freq * time);
             }
         }
@@ -41,10 +43,12 @@ class BMTMAudioProcessor extends AudioWorkletProcessor {
 
         for (let i = 0; i < channel.length; i++) {
             channel[i] = this.getMixedToneSample();
+            this.sampleCounter++;
 
-            if (++this.counter >= this.samplesPerByte) {
-                this.counter = 0;
+            if (this.sampleCounter >= this.samplesPerByte) {
+                this.sampleCounter = 0;
                 this.byte = this.buffer.shift() ?? 0;
+
                 if (this.alertOnEmpty && this.buffer.length === 0) {
                     this.port.postMessage(null);
                     this.alertOnEmpty = false;

@@ -1,6 +1,5 @@
 // Binary Multi-Tone Demodulator - Audio Node Processor
 
-const DATA_RATE = 50;  // Bytes per Second
 const SAMPLING_RATE = 48_000;
 
 class RingBuffer {
@@ -97,15 +96,15 @@ class SDFTEngine {
 
 class BMTDAudioProcessor extends AudioWorkletProcessor {
 
-    constructor() {
-        super();
+    constructor(options) {
+        super(options);
         this.state = 'INIT';
 
         this.packetSize = 0;
         this.dataBuffer = [];
 
         this.sampleCounter = 0;
-        this.samplesPerByte = Math.floor(SAMPLING_RATE / DATA_RATE);
+        this.samplesPerByte = Math.floor(SAMPLING_RATE / options.processorOptions.rate);
 
         this.engine = new SDFTEngine(this.samplesPerByte);
         this.port.onmessage = e => {
