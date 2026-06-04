@@ -1,4 +1,4 @@
-// Audio Demodulator To Instantiate Node (Controller)
+// Audio Demodulator To Instantiate Audio-Worklet Processor Node
 
 const SAMPLING_RATE = 48_000;
 
@@ -7,8 +7,6 @@ let audioNode: AudioWorkletNode | null = null;
 
 let micStream: MediaStream | null = null;
 let sourceNode: MediaStreamAudioSourceNode | null = null;
-
-export const bmtmDataRates = [1, 5, 10, 25, 50, 100];
 
 type Processor = { module: string, channels: 1 | 2, rate: number }
 

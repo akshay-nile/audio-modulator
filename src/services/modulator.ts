@@ -1,17 +1,14 @@
-// Audio Modulator To Instantiate Node (Controller)
+// Audio Modulator To Audio-Worklet Processor Instantiate Node
 
 const SAMPLING_RATE = 48_000;
 
 let audioContext: AudioContext | null = null;
 let audioNode: AudioWorkletNode | null = null;
 
-export const uartBaudRates = [300, 600, 1200, 2400, 4800, 9600];
-export const bmtmDataRates = [1, 5, 10, 25, 50, 100];
+type Processor = { module: string, channels: 1 | 2 }
+type Options = { baudRate: number, carrierFreq: number | null };
 
-export type SliderValues = { A?: number, B?: number, C?: number, D?: number };
-type Processor = { module: string, channels: 1 | 2, rate: number | SliderValues }
-
-export async function startAudioModulator(processor: Processor): Promise<AudioWorkletNode> {
+export async function startAudioModulator(processor: Processor, options: Options): Promise<AudioWorkletNode> {
     // If already running, return the active instance to avoid duplicate setups
     if (audioContext && audioContext.state !== 'closed') {
         if (audioContext.state === 'suspended') await audioContext.resume();
@@ -22,7 +19,7 @@ export async function startAudioModulator(processor: Processor): Promise<AudioWo
     audioContext = new AudioContext({ sampleRate: SAMPLING_RATE });
 
     // Inject compilation-safe background uart-processor.js module
-    await audioContext.audioWorklet.addModule(`./${processor.module}.js`);
+    await audioContext.audioWorklet.addModule(`./modulators/${processor.module}.js`);
 
     // Instantiate the custom AudioWorkletNode
     audioNode = new AudioWorkletNode(audioContext, processor.module, {
@@ -30,7 +27,7 @@ export async function startAudioModulator(processor: Processor): Promise<AudioWo
         numberOfOutputs: 1,
 
         outputChannelCount: [processor.channels], // Number of output channels
-        processorOptions: { rate: processor.rate } // Constructor options
+        processorOptions: options // Constructor options
     });
 
     // Finish by routing the node to the system speaker output
