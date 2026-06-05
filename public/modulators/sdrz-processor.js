@@ -6,7 +6,7 @@ class StereoDifferentialBPRZProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super(options);
 
-        this.bit = null;     // UART idle state (LOW)
+        this.bit = null;     // UART idle state (Return to Zero / GND)
         this.frame = null;   // UART data frame of 8 bits
 
         this.buffer = [];    // Data bytes to transmit

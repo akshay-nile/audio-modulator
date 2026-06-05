@@ -1,8 +1,10 @@
-// Stereo Set-Reset Trigger Audio Node Processor
+// Amplitude Shift Keying Audio Node Processor (Mono Channel)
 
 const SAMPLING_RATE = 48_000;
+const TWO_PI = 2 * Math.PI;
+const D_TIME = 1 / SAMPLING_RATE;
 
-class StereoSetResetTriggerProcessor extends AudioWorkletProcessor {
+class AmplitudeShiftKeyingProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super(options);
 
@@ -12,14 +14,16 @@ class StereoSetResetTriggerProcessor extends AudioWorkletProcessor {
         this.buffer = [];    // Data bytes to transmit
         this.alertOnEmpty = true;
 
+        this.phase = 0.0;
+        this.carrierFrequency = options.processorOptions.carrierFreq;
+
         this.sampleCounter = 0;
         this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
-        this.halfBitBoundry = Math.floor(this.samplesPerBit / 2);
 
         this.port.onmessage = e => {
-            if (typeof e.data === 'object' && 'baudRate' in e.data) {
+            if (typeof e.data === 'object' && 'baudRate' in e.data && 'carrierFreq' in e.data) {
+                this.carrierFrequency = e.data.carrierFreq;
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
-                this.halfBitBoundry = Math.floor(this.samplesPerBit / 2);
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
                 this.alertOnEmpty = true;
@@ -44,22 +48,18 @@ class StereoSetResetTriggerProcessor extends AudioWorkletProcessor {
         return 0; // UART start bit
     }
 
-    process(_inputs, _outputs) {
-        const [leftChannel, rightChannel] = _outputs[0];
+    getNextSinWaveSample(amplitude = 1, frequency = 1, phaseShift = 0) {
+        const sample = amplitude * Math.sin(this.phase + phaseShift);
+        this.phase += TWO_PI * frequency * D_TIME;
+        if (this.phase >= TWO_PI) this.phase -= TWO_PI;
+        return sample;
+    }
 
-        for (let i = 0; i < leftChannel.length; i++) {
-            if (this.sampleCounter < this.halfBitBoundry) { // First half of the bit period
-                if (this.bit === 1) {
-                    leftChannel[i] = +1;  // Set pulse in L
-                    rightChannel[i] = -1;
-                } else if (this.bit === 0) {
-                    leftChannel[i] = -1;
-                    rightChannel[i] = +1;  // Reset pulse in R
-                }
-            } else { // Second half of the bit period
-                leftChannel[i] = 0;
-                rightChannel[i] = 0;
-            }
+    process(_inputs, _outputs) {
+        const channel = _outputs[0][0];
+
+        for (let i = 0; i < channel.length; i++) {
+            channel[i] = this.getNextSinWaveSample(this.bit, this.carrierFrequency);
 
             this.sampleCounter++;
 
@@ -78,4 +78,4 @@ class StereoSetResetTriggerProcessor extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor('ssrt-processor', StereoSetResetTriggerProcessor);
+registerProcessor('ask-processor', AmplitudeShiftKeyingProcessor);

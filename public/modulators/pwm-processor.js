@@ -6,7 +6,7 @@ class PulseWidthModulationProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super(options);
 
-        this.bit = null;     // UART idle state (LOW)
+        this.bit = 1;     // UART idle state (HIGH)
         this.frame = null;   // UART data frame of 8 bits
 
         this.buffer = [];    // Data bytes to transmit
@@ -62,7 +62,7 @@ class PulseWidthModulationProcessor extends AudioWorkletProcessor {
 
             if (this.sampleCounter >= this.samplesPerBit) {
                 this.sampleCounter = 0;
-                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit-1)
+                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
 
                 if (this.alertOnEmpty && this.buffer.length === 0) {
                     this.port.postMessage(null);

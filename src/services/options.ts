@@ -2,7 +2,7 @@
 export const passbandBaudRates = [75, 150, 300, 600, 1200];
 export const basebandBaudRates = [300, 600, 1200, 2400, 4800, 9600];
 
-const carrierFrequencies = [3000, 4000, 6000, 8000, 12000];
+const carrierFrequencies = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(f => f * 1000);
 
 export function getCarrierFrequencies(baudRate: number): number[] {
     return carrierFrequencies.filter(carrierFrequency => carrierFrequency / baudRate >= 10);
