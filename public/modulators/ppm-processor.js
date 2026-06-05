@@ -1,8 +1,8 @@
-// UART - Audio Node Processor
+// Pulse Position Modulation Audio Node Processor (Mono Channel)
 
 const SAMPLING_RATE = 48_000;
 
-class UARTAudioProcessor extends AudioWorkletProcessor {
+class PulsePositionModulationProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super(options);
 
@@ -13,11 +13,15 @@ class UARTAudioProcessor extends AudioWorkletProcessor {
         this.alertOnEmpty = true;
 
         this.sampleCounter = 0;
-        this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.rate);
+        this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
+        this.firstHalfEndBoundry = Math.floor(this.samplesPerBit / 2);
+        this.secondHalfStartBoundry = this.samplesPerBit - this.firstHalfEndBoundry;
 
         this.port.onmessage = e => {
-            if (typeof e.data === 'number') {
-                this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data);
+            if (typeof e.data === 'object' && 'baudRate' in e.data) {
+                this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
+                this.firstHalfEndBoundry = Math.floor(this.samplesPerBit / 2);
+                this.secondHalfStartBoundry = this.samplesPerBit - this.firstHalfEndBoundry;
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
                 this.alertOnEmpty = true;
@@ -43,16 +47,22 @@ class UARTAudioProcessor extends AudioWorkletProcessor {
     }
 
     process(_inputs, _outputs) {
-        const [leftChannel, rightChannel] = _outputs[0];
+        const channel = _outputs[0][0];
 
-        for (let i = 0; i < leftChannel.length; i++) {
-            leftChannel[i] = this.bit === null ? 0 : this.bit ? +1 : -1;
-            rightChannel[i] = -leftChannel[i]; // Differencial stereo output
+        for (let i = 0; i < channel.length; i++) {
+            if (this.sampleCounter < this.firstHalfEndBoundry) {
+                channel[i] = this.bit === 0 ? +1 : 0; // Pulse in the first half of the bit period (for bit 0)
+            } else if (this.sampleCounter >= this.secondHalfStartBoundry) {
+                channel[i] = this.bit === 1 ? +1 : 0; // Pulse in the second half of the bit period (for bit 1)
+            } else {
+                channel[i] = 0;
+            }
+
             this.sampleCounter++;
 
             if (this.sampleCounter >= this.samplesPerBit) {
                 this.sampleCounter = 0;
-                this.bit = this.getNextBit();
+                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit-1)
 
                 if (this.alertOnEmpty && this.buffer.length === 0) {
                     this.port.postMessage(null);
@@ -65,4 +75,4 @@ class UARTAudioProcessor extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor('uart-processor', UARTAudioProcessor);
+registerProcessor('ppm-processor', PulsePositionModulationProcessor);
