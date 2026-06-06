@@ -36,6 +36,11 @@ export const modulationSchemes: ModulationScheme[] = [
         carrier: false
     },
     {
+        name: 'Baseband: Pulse Slope Modulation',
+        processor: { module: 'psm-processor', channels: 1 },
+        carrier: false
+    },
+    {
         name: 'Baseband: Manchester Encoding',
         processor: { module: 'me-processor', channels: 1 },
         carrier: false
