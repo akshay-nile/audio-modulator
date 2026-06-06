@@ -48,6 +48,7 @@ class StereoDifferentialBPRZProcessor extends AudioWorkletProcessor {
         for (let i = 0; i < leftChannel.length; i++) {
             leftChannel[i] = this.bit === null ? 0 : this.bit ? +1 : -1;
             rightChannel[i] = -leftChannel[i]; // Differential stereo output
+
             this.sampleCounter++;
 
             if (this.sampleCounter >= this.samplesPerBit) {

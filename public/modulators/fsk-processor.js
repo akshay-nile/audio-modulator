@@ -16,7 +16,7 @@ class FrequencyShiftKeyingProcessor extends AudioWorkletProcessor {
 
         this.phase = 0.0;
         const { carrierFreq, baudRate } = options.processorOptions;
-        this.carrierFrequencies = [carrierFreq - Math.ceil(baudRate / 2), carrierFreq + Math.ceil(baudRate / 2)];
+        this.carrierFrequencies = [carrierFreq - baudRate, carrierFreq + baudRate];
 
         this.sampleCounter = 0;
         this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
@@ -24,7 +24,7 @@ class FrequencyShiftKeyingProcessor extends AudioWorkletProcessor {
         this.port.onmessage = e => {
             if (typeof e.data === 'object' && 'baudRate' in e.data && 'carrierFreq' in e.data) {
                 const { carrierFreq, baudRate } = e.data;
-                this.carrierFrequencies = [carrierFreq - Math.ceil(baudRate / 2), carrierFreq + Math.ceil(baudRate / 2)];
+                this.carrierFrequencies = [carrierFreq - baudRate, carrierFreq + baudRate];
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
