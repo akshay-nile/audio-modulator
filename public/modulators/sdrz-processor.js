@@ -42,24 +42,32 @@ class StereoDifferentialBPRZProcessor extends AudioWorkletProcessor {
         return 0; // UART start bit
     }
 
+    getNextSDRZSample() {
+        return this.bit === null ? 0 : this.bit ? +1 : -1;
+    }
+
+    incrementSampleCounter() {
+        this.sampleCounter++;
+
+        if (this.sampleCounter >= this.samplesPerBit) {
+            this.sampleCounter = 0;
+            this.bit = this.getNextBit(); // UART idle state (Return to Zero / GND)
+
+            if (this.alertOnEmpty && this.buffer.length === 0) {
+                this.port.postMessage(null);
+                this.alertOnEmpty = false;
+            }
+        }
+    }
+
     process(_inputs, _outputs) {
         const [leftChannel, rightChannel] = _outputs[0];
 
         for (let i = 0; i < leftChannel.length; i++) {
-            leftChannel[i] = this.bit === null ? 0 : this.bit ? +1 : -1;
+            leftChannel[i] = this.getNextSDRZSample();
             rightChannel[i] = -leftChannel[i]; // Differential stereo output
 
-            this.sampleCounter++;
-
-            if (this.sampleCounter >= this.samplesPerBit) {
-                this.sampleCounter = 0;
-                this.bit = this.getNextBit();
-
-                if (this.alertOnEmpty && this.buffer.length === 0) {
-                    this.port.postMessage(null);
-                    this.alertOnEmpty = false;
-                }
-            }
+            this.incrementSampleCounter();
         }
 
         return true;

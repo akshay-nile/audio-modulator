@@ -53,8 +53,22 @@ class FrequencyShiftKeyingProcessor extends AudioWorkletProcessor {
     getNextSinWaveSample(amplitude = 1, frequency = 1, phaseShift = 0) {
         const sample = amplitude * Math.sin(this.phase + phaseShift);
         this.phase += TWO_PI * frequency * D_TIME;
-        if (this.phase >= TWO_PI) this.phase -= TWO_PI;
+        while (this.phase >= TWO_PI) this.phase -= TWO_PI;
         return sample;
+    }
+
+    incrementSampleCounter() {
+        this.sampleCounter++;
+
+        if (this.sampleCounter >= this.samplesPerBit) {
+            this.sampleCounter = 0;
+            this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
+
+            if (this.alertOnEmpty && this.buffer.length === 0) {
+                this.port.postMessage(null);
+                this.alertOnEmpty = false;
+            }
+        }
     }
 
     process(_inputs, _outputs) {
@@ -62,18 +76,7 @@ class FrequencyShiftKeyingProcessor extends AudioWorkletProcessor {
 
         for (let i = 0; i < channel.length; i++) {
             channel[i] = this.getNextSinWaveSample(1, this.carrierFrequencies[this.bit]);
-
-            this.sampleCounter++;
-
-            if (this.sampleCounter >= this.samplesPerBit) {
-                this.sampleCounter = 0;
-                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
-
-                if (this.alertOnEmpty && this.buffer.length === 0) {
-                    this.port.postMessage(null);
-                    this.alertOnEmpty = false;
-                }
-            }
+            this.incrementSampleCounter();
         }
 
         return true;

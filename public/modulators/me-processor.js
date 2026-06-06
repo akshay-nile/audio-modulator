@@ -1,10 +1,8 @@
-// Phase Shift Keying Audio Node Processor (Mono Channel)
+// Manchester Encoding Audio Node Processor (Mono Channel)
 
 const SAMPLING_RATE = 48_000;
-const TWO_PI = 2 * Math.PI;
-const D_TIME = 1 / SAMPLING_RATE;
 
-class PhaseShiftKeyingProcessor extends AudioWorkletProcessor {
+class ManchesterEncodingProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super(options);
 
@@ -14,16 +12,14 @@ class PhaseShiftKeyingProcessor extends AudioWorkletProcessor {
         this.buffer = [];    // Data bytes to transmit
         this.alertOnEmpty = true;
 
-        this.phase = 0.0;
-        this.carrierFrequency = options.processorOptions.carrierFreq;
-
         this.sampleCounter = 0;
         this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
+        this.halfBitEndBoundry = Math.floor(this.samplesPerBit / 2);
 
         this.port.onmessage = e => {
-            if (typeof e.data === 'object' && 'baudRate' in e.data && 'carrierFreq' in e.data) {
-                this.carrierFrequency = e.data.carrierFreq;
+            if (typeof e.data === 'object' && 'baudRate' in e.data) {
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
+                this.halfBitEndBoundry = Math.floor(this.samplesPerBit / 2);
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
                 this.alertOnEmpty = true;
@@ -48,11 +44,10 @@ class PhaseShiftKeyingProcessor extends AudioWorkletProcessor {
         return 0; // UART start bit
     }
 
-    getNextSinWaveSample(amplitude = 1, frequency = 1, phaseShift = 0) {
-        const sample = amplitude * Math.sin(this.phase + phaseShift);
-        this.phase += TWO_PI * frequency * D_TIME;
-        while (this.phase >= TWO_PI) this.phase -= TWO_PI;
-        return sample;
+    getNextMESample() {
+        if (this.bit === 0) return (this.sampleCounter < this.halfBitEndBoundry) ? +1 : -1;
+        if (this.bit === 1) return (this.sampleCounter < this.halfBitEndBoundry) ? -1 : +1;
+        return 0;
     }
 
     incrementSampleCounter() {
@@ -73,7 +68,7 @@ class PhaseShiftKeyingProcessor extends AudioWorkletProcessor {
         const channel = _outputs[0][0];
 
         for (let i = 0; i < channel.length; i++) {
-            channel[i] = this.getNextSinWaveSample(1, this.carrierFrequency, this.bit ? 0 : Math.PI);
+            channel[i] = this.getNextMESample();
             this.incrementSampleCounter();
         }
 
@@ -81,4 +76,4 @@ class PhaseShiftKeyingProcessor extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor('psk-processor', PhaseShiftKeyingProcessor);
+registerProcessor('me-processor', ManchesterEncodingProcessor);

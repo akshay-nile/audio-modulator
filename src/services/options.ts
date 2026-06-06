@@ -36,6 +36,11 @@ export const modulationSchemes: ModulationScheme[] = [
         carrier: false
     },
     {
+        name: 'Baseband: Manchester Encoding',
+        processor: { module: 'me-processor', channels: 1 },
+        carrier: false
+    },
+    {
         name: 'Passband: Amplitude Shift Keying',
         processor: { module: 'ask-processor', channels: 1 },
         carrier: true
@@ -49,5 +54,5 @@ export const modulationSchemes: ModulationScheme[] = [
         name: 'Passband: Phase Shift Keying',
         processor: { module: 'psk-processor', channels: 1 },
         carrier: true
-    },
+    }
 ];

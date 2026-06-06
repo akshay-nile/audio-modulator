@@ -14,14 +14,14 @@ class PulsePositionModulationProcessor extends AudioWorkletProcessor {
 
         this.sampleCounter = 0;
         this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
-        this.firstHalfEndBoundry = Math.floor(this.samplesPerBit / 2);
-        this.secondHalfStartBoundry = this.samplesPerBit - this.firstHalfEndBoundry;
+        this.earlyPulseEndBoundry = Math.floor(this.samplesPerBit / 3);
+        this.latePulseStartBoundry = this.samplesPerBit - this.earlyPulseEndBoundry;
 
         this.port.onmessage = e => {
             if (typeof e.data === 'object' && 'baudRate' in e.data) {
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
-                this.firstHalfEndBoundry = Math.floor(this.samplesPerBit / 2);
-                this.secondHalfStartBoundry = this.samplesPerBit - this.firstHalfEndBoundry;
+                this.earlyPulseEndBoundry = Math.floor(this.samplesPerBit / 3);
+                this.latePulseStartBoundry = this.samplesPerBit - this.earlyPulseEndBoundry;
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
                 this.alertOnEmpty = true;
@@ -46,29 +46,32 @@ class PulsePositionModulationProcessor extends AudioWorkletProcessor {
         return 0; // UART start bit
     }
 
+    getNextPPMSample() {
+        if (this.bit === 0 && this.sampleCounter < this.earlyPulseEndBoundry) return +1;
+        if (this.bit === 1 && this.sampleCounter >= this.latePulseStartBoundry) return +1;
+        return 0;
+    }
+
+    incrementSampleCounter() {
+        this.sampleCounter++;
+
+        if (this.sampleCounter >= this.samplesPerBit) {
+            this.sampleCounter = 0;
+            this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
+
+            if (this.alertOnEmpty && this.buffer.length === 0) {
+                this.port.postMessage(null);
+                this.alertOnEmpty = false;
+            }
+        }
+    }
+
     process(_inputs, _outputs) {
         const channel = _outputs[0][0];
 
         for (let i = 0; i < channel.length; i++) {
-            if (this.sampleCounter < this.firstHalfEndBoundry) {
-                channel[i] = this.bit === 0 ? +1 : 0; // Pulse in the first half of the bit period (for bit 0)
-            } else if (this.sampleCounter >= this.secondHalfStartBoundry) {
-                channel[i] = this.bit === 1 ? +1 : 0; // Pulse in the second half of the bit period (for bit 1)
-            } else {
-                channel[i] = 0;
-            }
-
-            this.sampleCounter++;
-
-            if (this.sampleCounter >= this.samplesPerBit) {
-                this.sampleCounter = 0;
-                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
-
-                if (this.alertOnEmpty && this.buffer.length === 0) {
-                    this.port.postMessage(null);
-                    this.alertOnEmpty = false;
-                }
-            }
+            channel[i] = this.getNextPPMSample();
+            this.incrementSampleCounter();
         }
 
         return true;

@@ -14,12 +14,12 @@ class StereoSetResetTriggerProcessor extends AudioWorkletProcessor {
 
         this.sampleCounter = 0;
         this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
-        this.halfBitBoundry = Math.floor(this.samplesPerBit / 2);
+        this.halfBitEndBoundry = Math.floor(this.samplesPerBit / 2);
 
         this.port.onmessage = e => {
             if (typeof e.data === 'object' && 'baudRate' in e.data) {
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
-                this.halfBitBoundry = Math.floor(this.samplesPerBit / 2);
+                this.halfBitEndBoundry = Math.floor(this.samplesPerBit / 2);
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
                 this.alertOnEmpty = true;
@@ -44,34 +44,36 @@ class StereoSetResetTriggerProcessor extends AudioWorkletProcessor {
         return 0; // UART start bit
     }
 
+    getNextSSRTSample() {
+        if (this.sampleCounter < this.halfBitEndBoundry) { // First half of the bit period
+            if (this.bit === 1) return +1;
+            if (this.bit === 0) return -1;
+        }
+        return 0;
+    }
+
+    incrementSampleCounter() {
+        this.sampleCounter++;
+
+        if (this.sampleCounter >= this.samplesPerBit) {
+            this.sampleCounter = 0;
+            this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
+
+            if (this.alertOnEmpty && this.buffer.length === 0) {
+                this.port.postMessage(null);
+                this.alertOnEmpty = false;
+            }
+        }
+    }
+
     process(_inputs, _outputs) {
         const [leftChannel, rightChannel] = _outputs[0];
 
         for (let i = 0; i < leftChannel.length; i++) {
-            if (this.sampleCounter < this.halfBitBoundry) { // First half of the bit period
-                if (this.bit === 1) {
-                    leftChannel[i] = +1;  // Set pulse in L
-                    rightChannel[i] = -1;
-                } else if (this.bit === 0) {
-                    leftChannel[i] = -1;
-                    rightChannel[i] = +1;  // Reset pulse in R
-                }
-            } else { // Second half of the bit period
-                leftChannel[i] = 0;
-                rightChannel[i] = 0;
-            }
+            leftChannel[i] = this.getNextSSRTSample();
+            rightChannel[i] = -leftChannel[i]; // Differential stereo output
 
-            this.sampleCounter++;
-
-            if (this.sampleCounter >= this.samplesPerBit) {
-                this.sampleCounter = 0;
-                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
-
-                if (this.alertOnEmpty && this.buffer.length === 0) {
-                    this.port.postMessage(null);
-                    this.alertOnEmpty = false;
-                }
-            }
+            this.incrementSampleCounter();
         }
 
         return true;

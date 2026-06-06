@@ -14,14 +14,14 @@ class PulseWidthModulationProcessor extends AudioWorkletProcessor {
 
         this.sampleCounter = 0;
         this.samplesPerBit = Math.floor(SAMPLING_RATE / options.processorOptions.baudRate);
-        this.shortPulseBoundry = Math.floor(this.samplesPerBit * 1 / 5); // 20% Duty Cycle
-        this.longPulseBoundry = Math.floor(this.samplesPerBit * 4 / 5);  // 80% Duty Cycle
+        this.shortPulseEndBoundry = Math.floor(this.samplesPerBit * 1 / 5); // 20% Duty Cycle
+        this.longPulseEndBoundry = Math.floor(this.samplesPerBit * 4 / 5);  // 80% Duty Cycle
 
         this.port.onmessage = e => {
             if (typeof e.data === 'object' && 'baudRate' in e.data) {
                 this.samplesPerBit = Math.floor(SAMPLING_RATE / e.data.baudRate);
-                this.shortPulseBoundry = Math.floor(this.samplesPerBit * 1 / 5); // 20% Duty Cycle
-                this.longPulseBoundry = Math.floor(this.samplesPerBit * 4 / 5);  // 80% Duty Cycle
+                this.shortPulseEndBoundry = Math.floor(this.samplesPerBit * 1 / 5); // 20% Duty Cycle
+                this.longPulseEndBoundry = Math.floor(this.samplesPerBit * 4 / 5);  // 80% Duty Cycle
             } else if (e.data instanceof Uint8Array) {
                 this.buffer.push(...e.data);
                 this.alertOnEmpty = true;
@@ -46,29 +46,32 @@ class PulseWidthModulationProcessor extends AudioWorkletProcessor {
         return 0; // UART start bit
     }
 
+    getNextPWMSample() {
+        if (this.bit === 0 && this.sampleCounter < this.shortPulseEndBoundry) return +1;
+        if (this.bit === 1 && this.sampleCounter < this.longPulseEndBoundry) return +1;
+        return 0;
+    }
+
+    incrementSampleCounter() {
+        this.sampleCounter++;
+
+        if (this.sampleCounter >= this.samplesPerBit) {
+            this.sampleCounter = 0;
+            this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
+
+            if (this.alertOnEmpty && this.buffer.length === 0) {
+                this.port.postMessage(null);
+                this.alertOnEmpty = false;
+            }
+        }
+    }
+
     process(_inputs, _outputs) {
         const channel = _outputs[0][0];
 
         for (let i = 0; i < channel.length; i++) {
-            if (this.bit === 0) {
-                channel[i] = (this.sampleCounter < this.shortPulseBoundry) ? +1 : 0;
-            } else if (this.bit === 1) {
-                channel[i] = (this.sampleCounter < this.longPulseBoundry) ? +1 : 0;
-            } else {
-                channel[i] = 0;
-            }
-
-            this.sampleCounter++;
-
-            if (this.sampleCounter >= this.samplesPerBit) {
-                this.sampleCounter = 0;
-                this.bit = this.getNextBit() ?? 1; // UART idle state (Bit 1)
-
-                if (this.alertOnEmpty && this.buffer.length === 0) {
-                    this.port.postMessage(null);
-                    this.alertOnEmpty = false;
-                }
-            }
+            channel[i] = this.getNextPWMSample();
+            this.incrementSampleCounter();
         }
 
         return true;
