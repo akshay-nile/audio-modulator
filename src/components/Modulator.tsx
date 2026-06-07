@@ -53,7 +53,7 @@ function Modulator() {
     }, [stopModulator, audioNode]);
 
     return (
-        <div className="flex flex-col items-center gap-16">
+        <div className="flex flex-col items-center gap-10">
 
             <Panel header="Configurations" pt={{ content: { style: { padding: '1.25rem 1rem' } } }}>
                 <div className="flex flex-col gap-4 text-sm">
@@ -94,8 +94,10 @@ function Modulator() {
                 </div>
             </Panel>
 
-            <div className="flex flex-col gap-4">
-                <Button
+
+            <div className="flex flex-col items-center gap-2">
+                <img src={`./images/${modulationScheme.processor.module.split('-')[0]}.png`} className="w-full px-2" />
+                <Button className="w-fit"
                     label={`${audioNode ? 'Stop' : 'Start'} Audio Modulator`}
                     severity={audioNode ? 'danger' : 'success'}
                     onClick={() => audioNode ? stopModulator() : startModulator()} />
