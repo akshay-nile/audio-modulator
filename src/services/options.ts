@@ -59,5 +59,15 @@ export const modulationSchemes: ModulationScheme[] = [
         name: 'Passband: Phase Shift Keying',
         processor: { module: 'psk-processor', channels: 1 },
         carrier: true
+    },
+    {
+        name: 'Passband: Amplitude Ramp Modulation',
+        processor: { module: 'arm-processor', channels: 1 },
+        carrier: true
+    },
+    {
+        name: 'Passband: Frequency Ramp Modulation',
+        processor: { module: 'frm-processor', channels: 1 },
+        carrier: true
     }
 ];
