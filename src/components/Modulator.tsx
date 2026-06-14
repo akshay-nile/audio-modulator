@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { startAudioModulator, stopAudioModulator } from '../services/modulator';
 import { basebandBaudRates, getCarrierFrequencies, modulationSchemes, passbandBaudRates, type ModulationScheme } from '../services/options';
 import { Panel } from 'primereact/panel';
+import Oscilloscope from './Oscilloscope';
 
 function Modulator() {
     const portRef = useRef<MessagePort | null>(null);
@@ -96,7 +97,11 @@ function Modulator() {
 
 
             <div className="flex flex-col items-center gap-2">
-                <img src={`./images/${modulationScheme.processor.module.split('-')[0]}.png`} className="w-full px-2" />
+                {
+                    audioNode
+                        ? <Oscilloscope node={audioNode} />
+                        : <img src={`./images/${modulationScheme.processor.module.split('-')[0]}.png`} className="w-full px-2" />
+                }
                 <Button className="w-fit"
                     label={`${audioNode ? 'Stop' : 'Start'} Audio Modulator`}
                     severity={audioNode ? 'danger' : 'success'}
