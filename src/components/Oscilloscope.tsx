@@ -25,6 +25,8 @@ function Oscilloscope({ node }: Props) {
         let animationId = 0;
 
         function draw() {
+            if (!canvas || !context) return;
+
             analyser.getFloatTimeDomainData(buffer);
             context.clearRect(0, 0, canvas.width, canvas.height);
 
