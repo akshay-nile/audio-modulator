@@ -15,13 +15,15 @@ function Oscilloscope({ node }: Props) {
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
 
+        const splitter = node.context.createChannelSplitter(2);
+        node.connect(splitter);
+
         const analyser = node.context.createAnalyser();
         analyser.fftSize = 256;
         while (analyser.fftSize < canvas.width) analyser.fftSize *= 2;
+        splitter.connect(analyser, 0);
 
-        node.connect(analyser);
         const buffer = new Float32Array(analyser.fftSize);
-
         let animationId = 0;
 
         function draw() {
@@ -58,11 +60,9 @@ function Oscilloscope({ node }: Props) {
         };
     }, [node]);
 
-    return (
-        <canvas
-            ref={canvasRef}
-            className="w-full h-50.25 bg-black rounded" />
-    );
+    return <canvas
+        ref={canvasRef}
+        className="w-full h-50.25 bg-black rounded" />;
 }
 
 export default Oscilloscope;
