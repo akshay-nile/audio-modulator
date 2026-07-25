@@ -16,57 +16,62 @@ export type ModulationScheme = {
 
 export const modulationSchemes: ModulationScheme[] = [
     {
-        name: 'Baseband: Stereo Differential BPRZ',
+        name: 'BB: Stereo Channel Cross Interrupt',
+        processor: { module: 'scci-processor', channels: 2 },
+        carrier: false
+    },
+    {
+        name: 'BB: Stereo Differential Bipolar RZ',
         processor: { module: 'sdrz-processor', channels: 2 },
         carrier: false
     },
     {
-        name: 'Baseband: Stereo Set-Reset Trigger',
+        name: 'BB: Stereo Set-Reset Trigger',
         processor: { module: 'ssrt-processor', channels: 2 },
         carrier: false
     },
     {
-        name: 'Baseband: Pulse Width Modulation',
+        name: 'BB: Pulse Width Modulation',
         processor: { module: 'pwm-processor', channels: 1 },
         carrier: false
     },
     {
-        name: 'Baseband: Pulse Position Modulation',
+        name: 'BB: Pulse Position Modulation',
         processor: { module: 'ppm-processor', channels: 1 },
         carrier: false
     },
     {
-        name: 'Baseband: Pulse Slope Modulation',
+        name: 'BB: Pulse Slope Modulation',
         processor: { module: 'psm-processor', channels: 1 },
         carrier: false
     },
     {
-        name: 'Baseband: Manchester Encoding',
+        name: 'BB: Manchester Encoding',
         processor: { module: 'me-processor', channels: 1 },
         carrier: false
     },
     {
-        name: 'Passband: Amplitude Shift Keying',
+        name: 'PB: Amplitude Shift Keying',
         processor: { module: 'ask-processor', channels: 1 },
         carrier: true
     },
     {
-        name: 'Passband: Frequency Shift Keying',
+        name: 'PB: Frequency Shift Keying',
         processor: { module: 'fsk-processor', channels: 1 },
         carrier: true
     },
     {
-        name: 'Passband: Phase Shift Keying',
+        name: 'PB: Phase Shift Keying',
         processor: { module: 'psk-processor', channels: 1 },
         carrier: true
     },
     {
-        name: 'Passband: Amplitude Ramp Modulation',
+        name: 'PB: Amplitude Ramp Modulation',
         processor: { module: 'arm-processor', channels: 1 },
         carrier: true
     },
     {
-        name: 'Passband: Frequency Ramp Modulation',
+        name: 'PB: Frequency Ramp Modulation',
         processor: { module: 'frm-processor', channels: 1 },
         carrier: true
     }

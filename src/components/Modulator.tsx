@@ -54,7 +54,7 @@ function Modulator() {
     }, [stopModulator, audioNode]);
 
     return (
-        <div className="flex flex-col items-center gap-10">
+        <div className="w-full sm:w-md flex flex-col items-center gap-8">
 
             <Panel header="Configurations" pt={{ content: { style: { padding: '1.25rem 1rem' } } }}>
                 <div className="flex flex-col gap-4 text-sm">
@@ -65,33 +65,36 @@ function Modulator() {
                             value={modulationScheme}
                             onChange={e => setModulationScheme(e.value)} />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex flex-col gap-1 justify-center">
-                            <label htmlFor="baud-rate">Baud Rate</label>
-                            <Dropdown id="baud-rate" name="baud-rate"
-                                options={(modulationScheme.carrier ? passbandBaudRates : basebandBaudRates).map(v => ({ label: v + ' Bits/Second', value: v }))}
-                                optionLabel="label" optionValue="value"
-                                value={baudRate}
-                                onChange={e => {
-                                    setBaudRate(e.value);
-                                    const availableCarrierFreqs = getCarrierFrequencies(e.value);
-                                    const freq = availableCarrierFreqs.includes(carrierFreq) ? carrierFreq : availableCarrierFreqs[0];
-                                    setCarrierFreq(freq);
-                                    if (audioNode) audioNode.port.postMessage({ baudRate: e.value, carrierFreq: freq });
-                                }} />
+                    {
+                        modulationScheme.processor.module !== 'scci-processor' &&
+                        <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1 justify-center">
+                                <label htmlFor="baud-rate">Baud Rate</label>
+                                <Dropdown id="baud-rate" name="baud-rate"
+                                    options={(modulationScheme.carrier ? passbandBaudRates : basebandBaudRates).map(v => ({ label: v + ' Bits/Second', value: v }))}
+                                    optionLabel="label" optionValue="value"
+                                    value={baudRate}
+                                    onChange={e => {
+                                        setBaudRate(e.value);
+                                        const availableCarrierFreqs = getCarrierFrequencies(e.value);
+                                        const freq = availableCarrierFreqs.includes(carrierFreq) ? carrierFreq : availableCarrierFreqs[0];
+                                        setCarrierFreq(freq);
+                                        if (audioNode) audioNode.port.postMessage({ baudRate: e.value, carrierFreq: freq });
+                                    }} />
+                            </div>
+                            <div className={`flex flex-col gap-1 justify-center ${!modulationScheme.carrier && 'hidden'}`}>
+                                <label htmlFor="carrier-freq">Carrier Freq.</label>
+                                <Dropdown id="carrier-freq" name="carrier-freq"
+                                    options={getCarrierFrequencies(baudRate).map(v => ({ label: v / 1000 + ' KHz', value: v }))}
+                                    optionLabel="label" optionValue="value"
+                                    value={carrierFreq}
+                                    onChange={e => {
+                                        setCarrierFreq(e.value);
+                                        if (audioNode) audioNode.port.postMessage({ baudRate, carrierFreq: e.value });
+                                    }} />
+                            </div>
                         </div>
-                        <div className={`flex flex-col gap-1 justify-center ${!modulationScheme.carrier && 'hidden'}`}>
-                            <label htmlFor="carrier-freq">Carrier Freq.</label>
-                            <Dropdown id="carrier-freq" name="carrier-freq"
-                                options={getCarrierFrequencies(baudRate).map(v => ({ label: v / 1000 + ' KHz', value: v }))}
-                                optionLabel="label" optionValue="value"
-                                value={carrierFreq}
-                                onChange={e => {
-                                    setCarrierFreq(e.value);
-                                    if (audioNode) audioNode.port.postMessage({ baudRate, carrierFreq: e.value });
-                                }} />
-                        </div>
-                    </div>
+                    }
                 </div>
             </Panel>
 
