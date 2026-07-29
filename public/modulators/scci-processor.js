@@ -10,7 +10,7 @@ class StereoChannelCrossInterruptProcessor extends AudioWorkletProcessor {
         super(options);
 
         this.frame = null;   // UART data frame of 8 bits
-        this.samples = [0, 1];  // L and R channel samples
+        this.samples = [-1, 1];  // L and R channel samples
 
         this.buffer = [];    // Data bytes to transmit
         this.alertOnEmpty = true;
@@ -48,7 +48,7 @@ class StereoChannelCrossInterruptProcessor extends AudioWorkletProcessor {
 
         if (this.sampleCounter <= 0) {
             this.sampleCounter = this.getNextBitSampleCount(); // Load the sample count for next UART bit
-            this.samples = this.samples.map(b => (b + 1) % 2); // Toggle L and R channels (Cross Interval) 
+            this.samples = this.samples.map(b => -1 * b); // Toggle L and R channels (Cross Interval) 
 
             if (this.alertOnEmpty && this.buffer.length === 0) {
                 this.port.postMessage(null);
